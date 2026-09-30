@@ -526,6 +526,8 @@ class JkgWriter:
         Builds the list of Term nodes of the nodes array of the JKG.JSON.
         """
         list_nodes = []
+        # For tracking unique values of STR.
+        seen_terms = set()
 
         # Obtain the subset of English-language, non-suppressed records of
         # concept-code relationships built by the UmlsReader object.
@@ -537,7 +539,11 @@ class JkgWriter:
 
         desc = self._get_progress_label("node_term")
         for row in tqdm(rows, desc=f'Building {desc}'):
-            # Filter out truly null terms, which are apparently possible in MRCONSO.
+            """
+            Distinguish between truly null terms (with the string "NaN" 
+            as value) from terms that contain the string "NaN" 
+            but are not null. Null terms are possible in MRCONSO.
+            """
             term = row["STR"]
             if term is not None:
                 if term == "NaN":
@@ -545,6 +551,15 @@ class JkgWriter:
                         term = "NaN (term)"
                     else:
                         continue
+
+                    """
+                    Deduplicate on the final term value, since unique() above
+                    only guaranteed uniqueness of the (CUI, STR) pair, not STR
+                    (or the post-substitution term) alone.
+                    """
+                    if term in seen_terms:
+                        continue
+                    seen_terms.add(term)
 
                 dict_node = {
                     "labels": ["Term"],
