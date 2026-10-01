@@ -34,6 +34,10 @@ class JkgWriter:
         self.ulog = ulog
         self.uext = ubkgExtract(ulog=ulog)
 
+        # CUIs for which related terms contain the string "NaN" string
+        # as a legitimate term that is not to be confused with Python NaN.
+        self.special_case_nan_cuis = self.cfg.get_value(section='cui_nans', key='cui_nans').split(',')
+
         # Read configuration file to obtain location of output directory.
         self.output_dir = self.cfg.get_value(section='directories', key='output_dir')
 
@@ -526,12 +530,34 @@ class JkgWriter:
         Builds the list of Term nodes of the nodes array of the JKG.JSON.
         """
         list_nodes = []
-        # For tracking unique values of STR.
-        seen_terms = set()
+
 
         # Obtain the subset of English-language, non-suppressed records of
         # concept-code relationships built by the UmlsReader object.
         df = self.ureader.df_concept_code_rels.select(['CUI','STR']).unique().sort('STR')
+
+        """
+            Revise STR so that legitimate "NaN" terms (for the two special-case
+            CUIs) are distinguished from null/placeholder "NaN" values by
+            appending " (term)". This must happen before calling unique() on
+            STR alone, so that:
+            - the two special-case rows become "NaN (term)" and are preserved
+            - all other "NaN" rows remain "NaN" and are filtered out below
+            - unique() is applied to STR alone, collapsing rows that share the
+              same STR across different CUIs (e.g., "yellow dock" for both
+              C0873056 and C0330386).
+        """
+        df = df.with_columns(
+            pl.when(
+                (pl.col("STR") == "NaN") & (pl.col("CUI").is_in(self.special_case_nan_cuis))
+            )
+            .then(pl.col("STR") + " (term)")
+            .otherwise(pl.col("STR"))
+            .alias("STR")
+        )
+
+        # Deduplicate on STR alone.
+        df = df.select(["STR"]).unique().sort("STR")
 
         rows = df.to_dicts()
         # Unload DataFrame.
@@ -547,19 +573,7 @@ class JkgWriter:
             term = row["STR"]
             if term is not None:
                 if term == "NaN":
-                    if self._is_special_case_nan(cui=row['CUI']):
-                        term = "NaN (term)"
-                    else:
-                        continue
-
-                    """
-                    Deduplicate on the final term value, since unique() above
-                    only guaranteed uniqueness of the (CUI, STR) pair, not STR
-                    (or the post-substitution term) alone.
-                    """
-                    if term in seen_terms:
-                        continue
-                    seen_terms.add(term)
+                    continue
 
                 dict_node = {
                     "labels": ["Term"],
@@ -759,6 +773,26 @@ class JkgWriter:
         # Obtain the common concept-code relationship dataset built by the
         # UmlsReader object at its initialization.
 
+        """
+            Revise STR so that legitimate "NaN" terms (for the two special-case
+            CUIs) are distinguished from null/placeholder "NaN" values by
+            appending " (term)". This must happen before calling unique() on
+            STR alone, so that:
+            - the two special-case rows become "NaN (term)" and are preserved
+            - all other "NaN" rows remain "NaN" and are filtered out below
+            - unique() is applied to STR alone, collapsing rows that share the
+              same STR across different CUIs (e.g., "yellow dock" for both
+              C0873056 and C0330386).
+        """
+        self.ureader.df_concept_code_rels = self.ureader.df_concept_code_rels.with_columns(
+            pl.when(
+                (pl.col("STR") == "NaN") & (pl.col("CUI").is_in(self.special_case_nan_cuis))
+            )
+            .then(pl.col("STR") + " (term)")
+            .otherwise(pl.col("STR"))
+            .alias("STR")
+        )
+
         rows = self.ureader.df_concept_code_rels.to_dicts()
 
         desc = self._get_progress_label("rel_concept_code")
@@ -777,10 +811,7 @@ class JkgWriter:
             if endid is not None:
 
                 if endid == "NaN":
-                    if self._is_special_case_nan(cui=row["CUI"]):
-                        endid = "NaN (term)"
-                    else:
-                        continue
+                    continue
 
                 dict_rel = {
                     "label": "CODE",
