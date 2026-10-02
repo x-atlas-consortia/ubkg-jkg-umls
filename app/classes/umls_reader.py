@@ -19,6 +19,9 @@ from classes.ubkg_logging import UbkgLogging
 # Timer for Polars lazy event processing
 from classes.ubkg_timer import UbkgTimer
 
+# To find repo root
+from utilities.find_repo_root import find_repo_root
+
 # Functions to standardize codes and terms from vocabularies
 from utilities.ubkg_standardize import create_codeid, standardize_codeid, standardize_term
 # color printing
@@ -485,7 +488,7 @@ class UmlsReader:
         """
         Obtains the JKG version from the VERSION file
         """
-        version_path = os.path.join(self.repo_root, 'VERSION')
+        version_path = os.path.join(find_repo_root(), 'VERSION')
         with open(version_path, 'r') as f:
             return f.read().strip()
 
