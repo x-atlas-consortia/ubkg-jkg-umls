@@ -481,6 +481,13 @@ class UmlsReader:
                         return l.split('=')[1].strip()
         except FileNotFoundError:
             return ""
+    def get_jkg_version(self)-> str:
+        """
+        Obtains the JKG version from the VERSION file
+        """
+        version_path = os.path.join(self.repo_root, 'VERSION')
+        with open(version_path, 'r') as f:
+            return f.read().strip()
 
 
 

@@ -281,6 +281,7 @@ class JkgWriter:
         # - the UMLS itself
         # - NDC
         umls_release = self.ureader.get_umls_version()
+        jkg_release = self.ureader.get_jkg_version()
         listsources = [
             {
                 "labels": ["Source"],
@@ -289,7 +290,9 @@ class JkgWriter:
                     "name": "JSON Knowledge Graph",
                     "description": "JSON specification for working with general knowledge graphs--specifically, property graphs.",
                     "sab": "JKG",
-                    "source":"https://github.com/x-atlas-consortia/json-knowledge-graph"
+                    "source":"https://github.com/x-atlas-consortia/json-knowledge-graph",
+                    "srl": "",
+                    "source_version":  jkg_release
                 }
             },
             {
@@ -299,16 +302,21 @@ class JkgWriter:
                     "name": "Unified Medical Language System",
                     "description": "United States National Institutes of Health (NIH) National Library of Medicine (NLM) Unified Medical Language System (UMLS) Knowledge Sources.",
                     "sab": "UMLS",
-                    "source": "http://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html"
-                    },
-                "source_version": umls_release
+                    "source": "http://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html",
+                    "srl":"varies based on SAB",
+                    "source_version": umls_release
+                }
             },
             {
                 "labels": ["Source"],
                 "properties": {
                     "id": "UMLS:NDC",
                     "name": "National Drug Codes",
-                    "sab": "NDC"
+                    "description": "National Drug Codes (via RxNorm)",
+                    "sab": "NDC",
+                    "source":"",
+                    "srl":"0", # SRL 0 because extracting only from MRSAT.RRF for SAB=RXNORM
+                    "source_version": umls_release
                 }
             }
         ]
@@ -322,7 +330,7 @@ class JkgWriter:
                     "name": row["SON"],
                     "sab": row["RSAB"],
                     "source_version": row["SVER"],
-                    "srl": row["SRL"],
+                    "srl": str(row["SRL"]),
                     "ttyl": row["TTYL"].split(",") if row["TTYL"] else []  # Convert TTYL to a list or an empty list
                 }
             }
@@ -873,6 +881,7 @@ class JkgWriter:
         df = df.with_columns((pl.col('SAB')+':'+pl.col('CODE')).alias('codeid'))
         df = df.with_columns((pl.lit('NDC:') + pl.col('ATV')).alias('ndcid'))
 
+
         # Join against the DataFrame of concept-code relationships to
         # get information on NDC concepts.
         # Filter out term types of:
@@ -887,6 +896,14 @@ class JkgWriter:
                .filter(pl.col('TTY') != 'PSN'))
               .filter(pl.col('TTY') != 'TMSY'))
 
+        """
+        Deduplicate on the pair (codeid, CUI), since these form the
+        uniqueness key of the resulting rel objects
+        (properties.codeid and start.properties.id). Without this,
+        multiple matching rows (e.g., differing only by STR/TTY) would
+        produce duplicate CODE rels for the same codeid/CUI pair.
+        """
+        df = df.unique(subset=['codeid', 'CUI','TTY','STR'], keep='first')
         utimer.stop()
 
         rows = df.to_dicts()
