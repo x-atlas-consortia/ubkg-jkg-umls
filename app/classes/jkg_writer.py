@@ -290,9 +290,10 @@ class JkgWriter:
                     "name": "JSON Knowledge Graph",
                     "description": "JSON specification for working with general knowledge graphs--specifically, property graphs.",
                     "sab": "JKG",
+                    "source_version": jkg_release,
                     #"source":"https://github.com/x-atlas-consortia/json-knowledge-graph",
                     "srl": "", # technically, N/A
-                    "source_version":  jkg_release
+                    "ttyl":[]
                 }
             },
             {
@@ -302,9 +303,10 @@ class JkgWriter:
                     "name": "Unified Medical Language System",
                     "description": "United States National Institutes of Health (NIH) National Library of Medicine (NLM) Unified Medical Language System (UMLS) Knowledge Sources.",
                     "sab": "UMLS",
+                    "source_version": umls_release,
                     #"source": "http://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html",
                     "srl":"varies based on SAB",
-                    "source_version": umls_release
+                    "ttyl": []
                 }
             },
             {
@@ -314,9 +316,10 @@ class JkgWriter:
                     "name": "National Drug Codes",
                     "description": "National Drug Codes (via RxNorm)",
                     "sab": "NDC",
+                    "source_version": umls_release,
                     #"source":"",
                     "srl":"0", # SRL 0 because extracting only from MRSAT.RRF for SAB=RXNORM
-                    "source_version": umls_release
+                    "ttyl": []
                 }
             }
         ]
