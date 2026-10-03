@@ -104,6 +104,7 @@ class Refseqapi:
                               start: int,
                               chunk: int) -> pd.DataFrame:
 
+        # Check for the existence of a RefSeq file.
         refseqfile = os.path.join(outdir, 'REFSEQ.csv')
 
         if os.path.isfile(refseqfile):
@@ -127,6 +128,7 @@ class Refseqapi:
         :return: DataFrame with Entrez ID, HGNC ID, and definition
         """
 
+        # ReqSeq API base url
         baseurl = 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/'
 
         listcodes = []
@@ -147,6 +149,7 @@ class Refseqapi:
 
         headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
+        # Process chunks of gene IDs.
         while retstart < (start + chunk):
 
             print(f'-- range: {retstart} to {retstart + retmax} (total count={retcount})')
@@ -155,6 +158,7 @@ class Refseqapi:
             if retstart + retmax > retcount:
                 retmax = retcount
 
+            # Call the esearch endpoint to obtain a set of gene uuids.
             esearch = f'esearch.fcgi?&{params}&usehistory=y&retmax={retmax}&retstart={retstart}&term={query}'
             urlsearch = f'{baseurl}{esearch}'
 
@@ -166,6 +170,7 @@ class Refseqapi:
             webenv = esearchresult.get('webenv')
             querykey = esearchresult.get('querykey')
 
+            # request to obtain RefSeq summary information for set of gene uuids
             esummary = f'esummary.fcgi?&{params}&WebEnv={webenv}&query_key={querykey}&retstart={retstart}&retmax={retmax}'
             urlsummary = f'{baseurl}{esummary}'
 

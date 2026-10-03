@@ -22,8 +22,9 @@ from classes.umls_reader import UmlsReader
 from classes.json_writer import JsonWriter
 # Timer for Polars lazy event processing
 from classes.ubkg_timer import UbkgTimer
+# Class that obtains gene information with the RefSeq API
 from classes.refseq import Refseqapi
-
+# I/O class
 from classes.ubkg_extract import ubkgExtract
 
 class JkgWriter:
@@ -34,12 +35,12 @@ class JkgWriter:
         self.ulog = ulog
         self.uext = ubkgExtract(ulog=ulog)
 
-        # CUIs for which related terms contain the string "NaN" string
-        # as a legitimate term that is not to be confused with Python NaN.
-        self.special_case_nan_cuis = self.cfg.get_value(section='cui_nans', key='cui_nans').split(',')
-
         # Read configuration file to obtain location of output directory.
         self.output_dir = self.cfg.get_value(section='directories', key='output_dir')
+
+        # Read configuratiom file to obtain CUIs for which related terms contain the string "NaN" string
+        # as a legitimate term that is not to be confused with Python NaN.
+        self.special_case_nan_cuis = self.cfg.get_value(section='cui_nans', key='cui_nans').split(',')
 
         # Make output directory if it does not yet exist.
         os.system(f"mkdir -p {self.output_dir}")
@@ -55,6 +56,7 @@ class JkgWriter:
         outfile = self.cfg.get_value(section='json_out', key='output_filename')
         outpath = os.path.join(self.output_dir, outfile)
         self.ulog.print_and_logger_info(f'Output file: {outpath}')
+        # Determine whether to pretty print JSON
         pretty = self.cfg.get_value(section='json_out', key='pretty')
         indent = self.cfg.get_value(section='json_out', key='indent')
         self.json_writer = JsonWriter(outpath=outpath, pretty=pretty, indent=indent)
@@ -429,7 +431,7 @@ class JkgWriter:
         # STY - semantic type
         df = self.ureader.get_umls_file(filename='MRSTY', cols=colsem)
 
-        # normalize empty STY to null so they don't become empty strings in the lists
+        # Normalize empty STY to null so they don't become empty strings in the lists
         df = df.with_columns(
             pl.when(pl.col("STY") == "").then(None).otherwise(pl.col("STY")).alias("STY")
         )
@@ -440,6 +442,12 @@ class JkgWriter:
             .agg(pl.col("STY"))
             .with_columns((pl.concat_list(pl.lit("Concept"), "STY")).alias("labels"))
         ).unique()
+
+        # Explicitly type "labels" as a List of Utf8 to avoid ambiguous
+        # typing downstream (e.g., Null-typed lists for empty STY groups).
+        dfsty = dfsty.with_columns(
+            pl.col("labels").cast(pl.List(pl.Utf8))
+        )
 
         return dfsty
 
@@ -499,7 +507,6 @@ class JkgWriter:
             .select("labels", "id", "pref_term", "sab")
             .unique()
         )
-
 
         # Unload DataFrames.
         self._unload_item(item_to_unload=preferred)
