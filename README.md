@@ -182,7 +182,7 @@ The [neo4 naming rules](https://neo4j.com/docs/cypher-manual/current/syntax/nami
 2. Start with a alphabetic character.
 
 Although a relationship can include special characters or start with a number, Cypher queries that refer 
-to the relationship must escape the relationship name with backticks. To avoid the need
+to the relationship must escape the relationship name with backticks (`). To avoid the need
 for backticks, relationships in the UBKG are reformatted as follows:
 
 | Characters                        | Change                    | Example                       |
@@ -211,7 +211,7 @@ The script assigns blank preferred terms to concepts without rows in MRCONSO.RRF
 ## Special cases
 ### NaN 
 The SCN11A gene and its associated gene product (NaN) have terms or synonyms with the string value of "NaN" in the UMLS source data (CUIs C1419854 and C5958837).
-The string "NaN" is a reserved word in Python, corresponding to np.NaN (not a Number). To avoid problems in Python scripts, the 
+The string "NaN" is a reserved word in Python, corresponding to np.NaN (Not a Number). To avoid problems in Python scripts, the 
 term "NaN" is changed to "Nan (term)".
 
 
