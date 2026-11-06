@@ -55,7 +55,7 @@ by means of the [MetamorphoSys](https://www.ncbi.nlm.nih.gov/books/NBK9683/) app
 The **umls2kjg** application reads from a subset of the data files from both the
 Metathesaurus and Semantic Network.
 
-### MetamorphoSys configuration
+## MetamorphoSys 
 The MetamorphoSys application allows the selection of subsets of UMLS data. Configuration options include:
 - selection of specific SABs
 - exclusion by license restriction
@@ -65,14 +65,54 @@ The application does not expect particular SAB content.
 
 Refer to the [UMLS Reference Manual](https://www.ncbi.nlm.nih.gov/books/NBK9683/) for instructions on configuring and running MetamorphoSys.
 
-#### Running MetamorphoSys
+#### Configuring MetamorphoSys
 The UMLS provides MetamorphoSys as part of a [UMLS Full Release](https://www.nlm.nih.gov/research/umls/licensedcontent/umlsknowledgesources.html).
-After expanding the release Zip archive, a user runs the MetamorphoSys executable to prepare and export the Metathesaurus and Semantic Network files.
+Metamorphosys runs in Windows, Linux, and MacOs. 
 
-##### MacOs considerations
-Metamorphosys runs in Windows, Linux, and MacOs. Before running Metamorphosys on a MacOs machine,
-move the **release.dat** file from its position in the Zip root to the _/META_ subdirectory. MetamorphoSys will not run
+1. Download the UMLS full release Zip.
+2. Expand the release Zip.
+3. Navigate to the release root.
+4. Expand the mmsys.zip archive.
+5. Copy the **release.dat** from the mmsys directory up to the release root. MetamorphoSys will not run
 on a MacOs machine until the **release.dat** file is in the expected location.
+
+####  Override MacOs Tahoe security
+MetamorphoSys is a Java application that uses a number of dynamic library (.dylib) files. 
+
+Beginning with the Tahoe release, MacOs security does not allow the automatic download of dynamic libraries. 
+For the initial run of MetamorphoSys, you will need to allow downloads of each dylib file explicitly. 
+
+The process is tedious, but straightforward:
+1. Open **System Settings>Privacy & Security > Security**. 
+2. Start a Terminal session. 
+3. Navigate to the mmsys directory. 
+4. Run ./run_mac.sh. 
+5. MetamorphoSys will start trying to download dynamic library files, triggering error loops that you must resolve for each dynamic library.
+
+##### Error loop
+1. Security displays an modal error box stating that it cannot load the dylib file. ![img_5.png](img_5.png)
+2. Select **Done**, not **Move to Trash**. This will occur 3-5 times in succession before MetamorphoSys raises a Java exception.
+2. Security refers to the dylib file in question with the button **Allow anyway**. Select this button. ![img_6.png](img_6.png)
+3. Run MetamorphoSys again. Security will display the modal error with the additional button **open anyway**. Click this button. ![img_7.png](img_7.png)
+4. Security will ask for an administrative password. Provide the administrative password.
+5. MetamorphoSys will move to the next dylib.
+
+#### Run MetamorphoSys on the full release.
+
+After overriding security for all dynamic libraries, the MetamorphoSys splash screen will appear: ![img_8.png](img_8.png). Click **Install UMLS**.
+The home page of MetamorphoSys will appear.
+1. Specify the source directory. Navigate to the release root.
+2. Specify the destination directory. This location is up to you.
+3. Click OK.
+![img_4.png](img_4.png)
+
+4. A **Validation Log** screen will appear. Click **Continue**.
+5. The **MetamorphoSys Progress..** window will appear at top left.
+6. The **Choose MetamorphoSys Configuration** window will appear below the MetamorphoSys splash screen. Click **New Configuration...**.
+7. The **License Agreement** window will appear. Click **Accept**. (The University of Pittsburgh has a license to distribute UMLS content.)
+8. The **Select Default Subset Configuration** window will appear. Select the **Active Subset**.
+9. An multi-tab window will appear that summarizes configuration options. 
+10. From the **Done** menu, select **Start Subset**.
 
 #### File export
 A full release Zip is very large. For example, the 2025AB release file expands to almost 40 GB.
